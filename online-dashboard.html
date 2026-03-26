@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>All Blue Lab – Mod Dashboard (Online)</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=Exo+2:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{--teal:#00d4c8;--gold:#f0c040;--orange:#ff8c00;--red:#e03030;--warn:#ff6600;--green:#22c55e;--border:rgba(0,212,200,0.35);--panel:rgba(4,8,18,0.97);}
+  html,body{min-height:100vh;background:#030610;font-family:'Exo 2',sans-serif;color:#eee;padding-bottom:50px;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,200,0.025) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;}
+  .wrap{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:12px;}
+  .hdr{display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(135deg,rgba(0,212,200,0.1),rgba(0,212,200,0.03));border:1px solid var(--border);border-radius:10px;margin-bottom:12px;}
+  .hdr-logo{font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:900;color:var(--teal);}
+  .hdr-logo span{color:var(--gold);}
+  .hdr-sub{font-size:0.5rem;color:rgba(0,212,200,0.55);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px;}
+  .live-pill{margin-left:auto;background:rgba(224,48,48,0.15);border:1px solid var(--red);color:var(--red);font-size:0.5rem;font-weight:800;padding:4px 10px;border-radius:20px;letter-spacing:0.12em;animation:blink 1.8s infinite;flex-shrink:0;}
+  .conn-bar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:7px;margin-bottom:10px;font-size:0.58rem;font-weight:700;transition:all 0.3s;}
+  .conn-bar.connected{background:rgba(0,212,200,0.08);border:1px solid rgba(0,212,200,0.35);color:var(--teal);}
+  .conn-bar.disconnected{background:rgba(224,48,48,0.08);border:1px solid rgba(224,48,48,0.35);color:var(--red);}
+  .conn-bar.connecting{background:rgba(255,102,0,0.08);border:1px solid rgba(255,102,0,0.35);color:var(--warn);}
+  .conn-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .connected .conn-dot{background:var(--teal);box-shadow:0 0 8px var(--teal);animation:pulse 2s infinite;}
+  .disconnected .conn-dot{background:var(--red);}
+  .connecting .conn-dot{background:var(--warn);animation:blink 0.8s infinite;}
+  .save-status{text-align:center;font-size:0.6rem;color:var(--teal);letter-spacing:0.08em;margin-bottom:8px;height:18px;transition:opacity 0.4s;}
+  .spin-display{background:rgba(0,212,200,0.05);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px;text-align:center;position:relative;overflow:hidden;}
+  .spin-num{font-family:'Orbitron',monospace;font-size:3rem;font-weight:900;color:#fff;line-height:1;text-shadow:0 0 20px rgba(0,212,200,0.3);}
+  .spin-num.warn{color:var(--warn);animation:warnPulse 1s infinite;}
+  .spin-lbl{font-size:0.52rem;color:rgba(0,212,200,0.7);text-transform:uppercase;letter-spacing:0.18em;margin-top:5px;font-weight:700;}
+  .spin-bar{height:4px;background:rgba(0,212,200,0.12);border-radius:2px;margin-top:10px;overflow:hidden;}
+  .spin-bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),rgba(0,212,200,0.4));border-radius:2px;transition:width 0.5s ease;}
+  .spin-bar-fill.warn-fill{background:linear-gradient(90deg,var(--warn),rgba(255,102,0,0.4));}
+  .warn-banner{display:none;align-items:center;gap:8px;padding:8px 12px;margin-bottom:10px;background:rgba(255,102,0,0.1);border:1px solid rgba(255,102,0,0.5);border-radius:8px;}
+  .warn-banner.visible{display:flex;animation:warnBorder 1.5s infinite;}
+  .warn-txt{font-family:'Orbitron',monospace;font-size:0.58rem;font-weight:900;color:var(--warn);}
+  .warn-sub-txt{font-size:0.44rem;color:rgba(255,150,50,0.8);margin-top:1px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+  .card-hdr{padding:8px 14px;background:linear-gradient(90deg,rgba(0,212,200,0.08),transparent);border-bottom:1px solid var(--border);font-family:'Orbitron',monospace;font-size:0.55rem;font-weight:600;color:var(--teal);letter-spacing:0.1em;}
+  .card-body{padding:12px 14px;}
+  .input-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .input-row:last-child{margin-bottom:0;}
+  .input-lbl{font-size:0.55rem;color:rgba(0,212,200,0.7);text-transform:uppercase;letter-spacing:0.08em;width:85px;flex-shrink:0;}
+  input[type=text],input[type=number],select{flex:1;background:rgba(0,212,200,0.04);border:1px solid rgba(0,212,200,0.25);border-radius:5px;color:#eee;font-family:'Exo 2',sans-serif;font-size:0.75rem;padding:7px 10px;outline:none;transition:border-color 0.2s;-webkit-appearance:none;}
+  input:focus,select:focus{border-color:var(--teal);box-shadow:0 0 8px rgba(0,212,200,0.2);}
+  select option{background:#040810;}
+  .counter{display:flex;align-items:center;flex:1;}
+  .counter input{border-radius:0;text-align:center;border-left:none;border-right:none;flex:1;}
+  .cnt-btn{width:40px;height:38px;background:rgba(0,212,200,0.08);border:1px solid rgba(0,212,200,0.25);color:var(--teal);font-size:1.1rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+  .cnt-btn:first-child{border-radius:5px 0 0 5px;}
+  .cnt-btn:last-child{border-radius:0 5px 5px 0;}
+  .cnt-btn:active{background:rgba(0,212,200,0.28);}
+  .sp-display{background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.35);border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;}
+  .sp-display-num{font-family:'Orbitron',monospace;font-size:1.6rem;font-weight:900;color:var(--orange);text-shadow:0 0 12px rgba(255,140,0,0.5);line-height:1;}
+  .sp-display-lbl{font-size:0.46rem;color:rgba(255,160,40,0.7);text-transform:uppercase;letter-spacing:0.1em;margin-top:3px;font-weight:700;}
+  .btn{width:100%;padding:11px;border-radius:7px;border:none;font-family:'Exo 2',sans-serif;font-size:0.72rem;font-weight:800;letter-spacing:0.06em;cursor:pointer;transition:all 0.15s;-webkit-tap-highlight-color:transparent;margin-bottom:7px;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .btn:last-child{margin-bottom:0;}
+  .btn-teal{background:linear-gradient(90deg,rgba(0,180,170,0.9),rgba(0,212,200,0.85));color:#020810;box-shadow:0 0 16px rgba(0,212,200,0.3);}
+  .btn-teal:active{transform:scale(0.98);}
+  .btn-outline{background:rgba(0,212,200,0.08);border:1.5px solid var(--teal);color:var(--teal);}
+  .btn-outline:active{background:rgba(0,212,200,0.22);}
+  .btn-red{background:rgba(224,48,48,0.1);border:1.5px solid var(--red);color:var(--red);}
+  .btn-red:active{background:rgba(224,48,48,0.25);}
+  .btn-sell{width:100%;padding:16px;border-radius:9px;border:none;font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:900;letter-spacing:0.08em;cursor:pointer;background:linear-gradient(90deg,rgba(0,180,170,0.9),rgba(0,212,200,0.85));color:#020810;box-shadow:0 0 20px rgba(0,212,200,0.35);-webkit-tap-highlight-color:transparent;transition:all 0.15s;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .btn-sell:active{transform:scale(0.97);}
+  /* Rarity quick buttons — all 7 types */
+  .rarity-btns{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+  .r-btn{padding:6px 10px;border-radius:4px;border:none;font-family:'Exo 2',sans-serif;font-size:0.6rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 0.1s;}
+  .r-btn:active{transform:scale(0.93);}
+  .r-c  {background:rgba(255,255,255,0.1); color:#c8d4e8;}
+  .r-uc {background:rgba(0,212,200,0.15);  color:var(--teal);}
+  .r-r  {background:rgba(60,120,220,0.2);  color:#6699ff;}
+  .r-l  {background:rgba(150,0,200,0.2);   color:#dd88ff;}
+  .r-sr {background:rgba(200,151,42,0.22); color:var(--gold);}
+  .r-sec{background:rgba(255,50,50,0.2);   color:#ff6666;}
+  .r-aa {background:rgba(200,151,42,0.28); color:var(--gold);border:1px solid rgba(200,151,42,0.4);}
+  .r-sp {background:rgba(255,140,0,0.25);  color:var(--orange);border:1px solid rgba(255,140,0,0.4);}
+  .pull-log{display:flex;flex-direction:column;gap:5px;max-height:230px;overflow-y:auto;}
+  .log-item{display:grid;grid-template-columns:60px 1fr auto auto;align-items:center;gap:6px;padding:6px 8px;background:rgba(0,212,200,0.03);border:1px solid rgba(0,212,200,0.1);border-radius:5px;font-size:0.56rem;}
+  .log-buyer{color:var(--gold);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .log-card{color:#c8d4e8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .log-rarity{font-size:0.5rem;font-weight:800;padding:2px 5px;border-radius:3px;}
+  .log-del{color:#ff4444;cursor:pointer;padding:0 2px;}
+  .empty-log{font-size:0.56rem;color:#3a4a68;text-align:center;padding:14px 0;}
+  .rarity-c  {background:rgba(255,255,255,0.07);color:#9aaac8;}
+  .rarity-uc {background:rgba(0,212,200,0.12);  color:var(--teal);}
+  .rarity-r  {background:rgba(60,120,220,0.18); color:#6699ff;}
+  .rarity-l  {background:rgba(150,0,200,0.22);  color:#dd88ff;}
+  .rarity-sr {background:rgba(200,151,42,0.2);  color:var(--gold);}
+  .rarity-sec{background:rgba(255,50,50,0.18);  color:#ff6666;}
+  .rarity-aa {background:rgba(200,151,42,0.22);  color:var(--gold);border:1px solid rgba(200,151,42,0.4);}
+  .rarity-sp {background:rgba(255,140,0,0.25);  color:var(--orange);border:1px solid rgba(255,140,0,0.4);}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+  @keyframes warnPulse{0%,100%{opacity:1}50%{opacity:0.45}}
+  @keyframes warnBorder{0%,100%{border-color:rgba(255,102,0,0.5)}50%{border-color:rgba(255,102,0,1)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .fade-in{animation:fadeIn 0.3s ease;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <div class="hdr-logo">ALL<span>BLUE</span> LAB</div>
+      <div class="hdr-sub">Mod Dashboard · Online · Firebase</div>
+    </div>
+    <div class="live-pill">● LIVE</div>
+  </div>
+
+  <div class="conn-bar connecting" id="connBar">
+    <div class="conn-dot"></div>
+    <span id="connText">Connecting to Firebase...</span>
+  </div>
+  <div class="save-status" id="saveStatus"></div>
+
+  <div class="spin-display">
+    <div class="spin-num" id="dispSpins">330</div>
+    <div class="spin-lbl">Remaining Spins</div>
+    <div class="spin-bar"><div class="spin-bar-fill" id="dispProgress" style="width:100%"></div></div>
+  </div>
+
+  <div class="warn-banner" id="warnBanner">
+    <span style="font-size:1rem">⚠</span>
+    <div><div class="warn-txt">FINAL SPINS — OVERLAY WARNING ACTIVE</div><div class="warn-sub-txt">Less than 50 spins remaining!</div></div>
+  </div>
+
+  <button class="btn-sell" onclick="quickSell()">🎴 &nbsp; CARD SOLD &nbsp; ( −1 Spin · +1 Sold )</button>
+
+  <!-- SET INFO -->
+  <div class="card">
+    <div class="card-hdr">⚙ SET INFO</div>
+    <div class="card-body">
+      <div class="input-row">
+        <span class="input-lbl">Set Name</span>
+        <input type="text" id="setName" value="OP03 – Pillars of Strength">
+      </div>
+      <div class="input-row">
+        <span class="input-lbl">Language</span>
+        <select id="setLang">
+          <option value="NM · JP">NM · JP</option>
+          <option value="NM · EN">NM · EN</option>
+          <option value="NM · KR">NM · KR</option>
+          <option value="LP · JP">LP · JP</option>
+        </select>
+      </div>
+      <div class="input-row">
+        <span class="input-lbl">Spins Left</span>
+        <div class="counter">
+          <button class="cnt-btn" onclick="adj('cardsLeft',-1)">−</button>
+          <input type="number" id="cardsLeft" value="330" min="0" max="330">
+          <button class="cnt-btn" onclick="adj('cardsLeft',1)">+</button>
+        </div>
+      </div>
+      <div class="input-row" style="margin-bottom:12px;">
+        <span class="input-lbl">Cards Sold</span>
+        <div class="counter">
+          <button class="cnt-btn" onclick="adj('cardsSold',-1)">−</button>
+          <input type="number" id="cardsSold" value="0" min="0">
+          <button class="cnt-btn" onclick="adj('cardsSold',1)">+</button>
+        </div>
+      </div>
+      <div class="sp-display">
+        <div class="sp-display-num" id="dispSP">2</div>
+        <div class="sp-display-lbl">SP Left ✦</div>
+      </div>
+      <div class="input-row" style="margin-bottom:12px;">
+        <span class="input-lbl">SP Left</span>
+        <div class="counter">
+          <button class="cnt-btn" onclick="adj('spLeft',-1)">−</button>
+          <input type="number" id="spLeft" value="2" min="0">
+          <button class="cnt-btn" onclick="adj('spLeft',1)">+</button>
+        </div>
+      </div>
+      <button class="btn btn-teal" onclick="pushToFirebase()">⚡ UPDATE OVERLAY NOW</button>
+    </div>
+  </div>
+
+  <!-- LOG A PULL -->
+  <div class="card">
+    <div class="card-hdr">🎴 LOG A PULL</div>
+    <div class="card-body">
+      <div class="input-row">
+        <span class="input-lbl">Buyer</span>
+        <input type="text" id="pullBuyer" placeholder="e.g. bermy24">
+      </div>
+      <div class="input-row">
+        <span class="input-lbl">Card Name</span>
+        <input type="text" id="pullCard" placeholder="e.g. Charlotte Perospero">
+      </div>
+      <div class="input-row">
+        <span class="input-lbl">Rarity</span>
+        <select id="pullRarity">
+          <option value="C">C – Common</option>
+          <option value="UC">UC – Uncommon</option>
+          <option value="R">R – Rare</option>
+          <option value="L">L – Leader</option>
+          <option value="SR">SR – Super Rare</option>
+          <option value="SEC">SEC – Secret Rare</option>
+          <option value="AA">AA – Alternate Art</option>
+          <option value="SP" selected>SP – Special</option>
+        </select>
+      </div>
+      <!-- Quick tap all 7 rarities -->
+      <div class="rarity-btns">
+        <button class="r-btn r-c"   onclick="setRarity('C')">C</button>
+        <button class="r-btn r-uc"  onclick="setRarity('UC')">UC</button>
+        <button class="r-btn r-r"   onclick="setRarity('R')">R</button>
+        <button class="r-btn r-l"   onclick="setRarity('L')">L</button>
+        <button class="r-btn r-sr"  onclick="setRarity('SR')">SR</button>
+        <button class="r-btn r-sec" onclick="setRarity('SEC')">SEC</button>
+        <button class="r-btn r-aa"  onclick="setRarity('AA')">AA</button>
+        <button class="r-btn r-sp"  onclick="setRarity('SP')">SP ✦</button>
+      </div>
+      <br>
+      <button class="btn btn-teal" onclick="addPull()">＋ ADD PULL TO OVERLAY</button>
+    </div>
+  </div>
+
+  <!-- PULL HISTORY -->
+  <div class="card">
+    <div class="card-hdr">📋 PULL HISTORY</div>
+    <div class="card-body">
+      <div class="pull-log" id="pullLog"><div class="empty-log">No pulls yet</div></div>
+      <br>
+      <button class="btn btn-red" onclick="clearPulls()">🗑 Clear All Pulls</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyBcxRb77KxXGbJKF_v_MvTS2JaqQ8pLjjY",
+    authDomain: "the-all-blue-tcg-66092.firebaseapp.com",
+    databaseURL: "https://the-all-blue-tcg-66092-default-rtdb.firebaseio.com",
+    projectId: "the-all-blue-tcg-66092",
+    storageBucket: "the-all-blue-tcg-66092.firebasestorage.app",
+    messagingSenderId: "1073214498097",
+    appId: "1:1073214498097:web:2c5fcc7ef877684adebc10"
+  };
+
+  const app = initializeApp(FIREBASE_CONFIG);
+  const db  = getDatabase(app);
+  const dbRef = ref(db,'allblue');
+  const connBar  = document.getElementById('connBar');
+  const connText = document.getElementById('connText');
+
+  get(dbRef).then(snap=>{
+    if(snap.exists()) populateForm(snap.val());
+    connBar.className='conn-bar connected';
+    connText.textContent='Connected to Firebase ✓';
+  }).catch(()=>{
+    connBar.className='conn-bar disconnected';
+    connText.textContent='Connection failed — check internet';
+  });
+
+  window._pushFn = async (data)=>{ await set(dbRef,{...data,_ts:Date.now()}); };
+  window._deletePullFn = async (ts)=>{
+    const snap=await get(dbRef);
+    if(!snap.exists())return;
+    const data=snap.val();
+    data.pulls=(data.pulls||[]).filter(p=>p.ts!==ts);
+    await set(dbRef,{...data,_ts:Date.now()});
+    renderLog(data.pulls);
+  };
+
+  function populateForm(d){
+    if(!d)return;
+    document.getElementById('setName').value   = d.setName  ||'OP03 – Pillars of Strength';
+    document.getElementById('setLang').value   = d.setLang  ||'NM · JP';
+    document.getElementById('cardsLeft').value = d.cardsLeft??330;
+    document.getElementById('cardsSold').value = d.cardsSold??0;
+    document.getElementById('spLeft').value    = d.spLeft   ??2;
+    syncDisplay();
+    renderLog(d.pulls||[]);
+  }
+</script>
+
+<script>
+  const TOTAL=330;
+  function getFormData(){
+    return{
+      setName:  document.getElementById('setName').value,
+      setLang:  document.getElementById('setLang').value,
+      cardsLeft:parseInt(document.getElementById('cardsLeft').value)||0,
+      cardsSold:parseInt(document.getElementById('cardsSold').value)||0,
+      spLeft:   parseInt(document.getElementById('spLeft').value)   ||0,
+      pulls:    JSON.parse(sessionStorage.getItem('pulls')||'[]')
+    };
+  }
+  function syncDisplay(){
+    const spins=parseInt(document.getElementById('cardsLeft').value)||0;
+    const sp   =parseInt(document.getElementById('spLeft').value)   ||0;
+    document.getElementById('dispSpins').textContent=spins;
+    document.getElementById('dispSP').textContent=sp;
+    const pct=Math.max(0,Math.min(100,(spins/TOTAL)*100));
+    const fill=document.getElementById('dispProgress');
+    fill.style.width=pct+'%';
+    const isWarn=spins>0&&spins<=50;
+    document.getElementById('dispSpins').classList.toggle('warn',isWarn);
+    fill.classList.toggle('warn-fill',isWarn);
+    const w=document.getElementById('warnBanner');
+    isWarn?w.classList.add('visible'):w.classList.remove('visible');
+  }
+  document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',syncDisplay));
+  function adj(id,delta){
+    const el=document.getElementById(id);
+    el.value=Math.max(0,(parseInt(el.value)||0)+delta);
+    syncDisplay();
+  }
+  async function quickSell(){adj('cardsLeft',-1);adj('cardsSold',1);await pushToFirebase();flash('🎴 −1 Spin · +1 Sold');}
+  async function pushToFirebase(){syncDisplay();if(window._pushFn)await window._pushFn(getFormData());flash('✅ Overlay updated!');}
+  function flash(msg){const el=document.getElementById('saveStatus');el.textContent=msg;el.style.opacity=1;setTimeout(()=>el.style.opacity=0,2500);}
+  function setRarity(r){document.getElementById('pullRarity').value=r;}
+  async function addPull(){
+    const buyer=document.getElementById('pullBuyer').value.trim();
+    const card =document.getElementById('pullCard').value.trim();
+    const rar  =document.getElementById('pullRarity').value;
+    if(!buyer||!card){alert('Enter buyer name and card name!');return;}
+    const pulls=JSON.parse(sessionStorage.getItem('pulls')||'[]');
+    pulls.push({buyer,cardName:card,rarity:rar,ts:Date.now()});
+    sessionStorage.setItem('pulls',JSON.stringify(pulls));
+    renderLog(pulls);
+    if(window._pushFn)await window._pushFn(getFormData());
+    document.getElementById('pullBuyer').value='';
+    document.getElementById('pullCard').value='';
+    flash(`🎴 ${buyer} → ${card} (${rar}) added!`);
+  }
+  async function deletePull(ts){
+    let pulls=JSON.parse(sessionStorage.getItem('pulls')||'[]');
+    pulls=pulls.filter(p=>p.ts!==ts);
+    sessionStorage.setItem('pulls',JSON.stringify(pulls));
+    renderLog(pulls);
+    if(window._deletePullFn)await window._deletePullFn(ts);
+  }
+  async function clearPulls(){
+    if(!confirm('Clear all pulls?'))return;
+    sessionStorage.setItem('pulls','[]');
+    renderLog([]);
+    if(window._pushFn)await window._pushFn(getFormData());
+  }
+  const rarMap={C:'rarity-c',UC:'rarity-uc',R:'rarity-r',L:'rarity-l',SR:'rarity-sr',SEC:'rarity-sec',AA:'rarity-aa',SP:'rarity-sp'};
+  function renderLog(pulls){
+    sessionStorage.setItem('pulls',JSON.stringify(pulls));
+    const el=document.getElementById('pullLog');
+    if(!pulls.length){el.innerHTML='<div class="empty-log">No pulls yet</div>';return;}
+    el.innerHTML=[...pulls].reverse().map(p=>`
+      <div class="log-item fade-in">
+        <span class="log-buyer">${p.buyer}</span>
+        <span class="log-card">${p.cardName}</span>
+        <span class="log-rarity ${rarMap[p.rarity]||'rarity-c'}">${p.rarity}</span>
+        <span class="log-del" onclick="deletePull(${p.ts})">✕</span>
+      </div>`).join('');
+  }
+  syncDisplay();
+</script>
+</body>
+</html>
